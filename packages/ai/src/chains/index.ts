@@ -1,5 +1,7 @@
-export { create as createSectionsChain } from "./sections";
-export { create as createThemeChain } from "./theme";
-export { create as createUiChain } from "./ui";
+export * as scaffold from "./scaffold";
+export * as theme from "./theme";
+export * as customize from "./customize";
+export * as sections from "./sections";
+export * as ui from "./ui";
 
 export * from "./types";

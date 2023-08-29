@@ -41,7 +41,7 @@ import {
   findClosestDroppableTarget,
   findSelectedInstance,
   insertTemplate,
-  replaceTemplate,
+  // replaceTemplate,
 } from "~/shared/instance-utils";
 
 type TabContentProps = {
@@ -177,7 +177,7 @@ const onAIComplete = {
         return;
       }
 
-      replaceTemplate(template, selectedInstanceSelector);
+      // replaceTemplate(template, selectedInstanceSelector);
     },
   },
 };

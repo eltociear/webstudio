@@ -4,6 +4,7 @@ import {
   parseCssValue,
   type RgbValue,
 } from "@webstudio-is/css-data";
+import type { Entries } from "type-fest";
 import { z } from "zod";
 
 export const fromRawTheme = (theme: ThemeRaw): Theme => {
@@ -171,6 +172,34 @@ export const toRawTheme = (theme: Theme): ThemeRaw => {
   );
 
   return result;
+};
+
+type TokenToThemeFilter = (property: string, value: string | number) => boolean;
+export const toTokensTheme = (
+  theme: Theme,
+  filter?: TokenToThemeFilter
+): string[] => {
+  return (Object.entries(theme) as Entries<Theme>).flatMap(
+    ([property, value]) => {
+      if (Array.isArray(value)) {
+        let intermediate = value;
+        if (filter) {
+          intermediate = intermediate.filter((_, index) =>
+            filter(property, index)
+          );
+        }
+        return intermediate.map((_, index) => `${property}.${index}`);
+      }
+
+      let intermediate = Object.keys(value);
+      if (filter) {
+        intermediate = intermediate.filter((_, index) =>
+          filter(property, index)
+        );
+      }
+      return intermediate.map((value) => `${property}.${value}`);
+    }
+  );
 };
 
 export const hexToRgbValue = function (color: string): RgbValue {

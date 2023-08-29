@@ -11,6 +11,7 @@ import {
   StylesList,
   Breakpoint,
   DataSource,
+  type Build,
 } from "@webstudio-is/project-build";
 import { StyleValue, type StyleProperty } from "@webstudio-is/css-data";
 import type { Simplify } from "type-fest";
@@ -448,4 +449,93 @@ export const namespaceMeta = (
     );
   }
   return newMeta;
+};
+
+export const instanceToWsTemplate = function toTeamplate({
+  build,
+  instanceId,
+}: {
+  build: Build;
+  instanceId: string;
+}): WsEmbedTemplate {
+  const instances = new Map(build.instances);
+  const rootInstance = instances.get(instanceId);
+
+  if (!rootInstance) {
+    throw new Error("Instance not found");
+  }
+
+  const styleSourcesSelections = new Map(build.styleSourceSelections);
+  const styleSources = new Map(build.styleSources);
+
+  const processInstances = function processInstances(
+    instance: typeof rootInstance,
+    template: WsEmbedTemplate
+  ) {
+    const { type, component, label } = instance;
+    const templateInstance: EmbedTemplateInstance = {
+      type,
+      component,
+      label,
+      children: [],
+    };
+
+    const styleSourcesSelection = styleSourcesSelections.get(instance.id);
+
+    if (styleSourcesSelection) {
+      const instanceStyleSources = styleSourcesSelection.values.map(
+        (styleSourceId) => styleSources.get(styleSourceId)
+      );
+
+      const styles = instanceStyleSources
+        .flatMap((styleSource) =>
+          styleSource && styleSource.type === "local"
+            ? build.styles.filter(
+                ([_, { styleSourceId }]) => styleSourceId === styleSource.id
+              )
+            : []
+        )
+        .map(([id, { state, value, property }]) => ({
+          state,
+          property,
+          value,
+        }));
+
+      templateInstance.styles = styles;
+      templateInstance.tokens = instanceStyleSources
+        .map((styleSource) =>
+          styleSource && styleSource.type === "token"
+            ? `__ws:${styleSource.id}`
+            : null
+        )
+        .filter(function <T>(value: T): value is NonNullable<T> {
+          return value !== null;
+        });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore todo fix the error below
+    templateInstance.props = build.props
+      .filter(
+        ([id, prop]) =>
+          prop.instanceId === instanceId &&
+          false === ["asset", "page"].includes(prop.type)
+      )
+      .map(([id, { type, name, value }]) => ({ type, name, value }));
+
+    templateInstance.children = instance.children.flatMap((child) => {
+      if (child.type === "text") {
+        return child;
+      }
+      const instanceId = child.value;
+      const childInstance = instances.get(instanceId);
+      return childInstance ? processInstances(childInstance, []) : [];
+    });
+
+    template.push(templateInstance);
+
+    return template;
+  };
+
+  return processInstances(rootInstance, []);
 };

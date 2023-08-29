@@ -17,6 +17,7 @@ import { ErrorMessage } from "~/shared/error";
 import { sentryException } from "~/shared/sentry";
 import { getBuildOrigin, loginPath } from "~/shared/router-utils";
 import { type BuilderProps, Builder, links } from "~/builder";
+import { instanceToWsTemplate } from "@webstudio-is/react-sdk";
 
 export { links };
 
@@ -108,7 +109,6 @@ export const ErrorBoundary = () => {
 
 export const BuilderRoute = () => {
   const data = useLoaderData<BuilderProps>();
-
   return <Builder {...data} />;
 };
 

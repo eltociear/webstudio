@@ -4,7 +4,7 @@ import { getCode } from "../../utils/get-code";
 import type { Chain, ChainMessage } from "../types";
 import { prompt as promptTemplate } from "./__generated__/sections.prompt";
 
-export const create = <ModelMessageFormat>(): Chain<
+export const createChain = <ModelMessageFormat>(): Chain<
   BaseModel<ModelMessageFormat>
 > =>
   async function chain({ model, context }) {

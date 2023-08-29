@@ -29,7 +29,10 @@ prompts.forEach((filePath) => {
 
   fs.ensureFileSync(generatedPath);
 
-  const content = fs.readFileSync(filePath, "utf-8").replace(/`/g, "\\`");
+  const content = fs
+    .readFileSync(filePath, "utf-8")
+    .replace(/`/g, "\\`")
+    .replace(/\$/g, "\\$"); // @todo technically we should escape only the $ that belong to template literals.;
 
   fs.writeFileSync(generatedPath, `export const prompt = \`${content}\`;\n`);
   // eslint-disable-next-line no-console

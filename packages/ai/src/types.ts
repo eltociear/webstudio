@@ -14,3 +14,5 @@ export type ErrorResponse = {
   status: number;
   message: string;
 };
+
+export * from "./templates/types";

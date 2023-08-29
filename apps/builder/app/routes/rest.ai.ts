@@ -2,13 +2,13 @@ import type { ActionArgs } from "@remix-run/node";
 
 import {
   createGptModel,
-  createSectionsChain,
-  createThemeChain,
-  createUiChain,
   type ChainContext,
   type ErrorResponse,
   type GPTModelMessageFormat,
   type SuccessResponse,
+  scaffold,
+  theme,
+  customize,
 } from "@webstudio-is/ai";
 import { isFeatureEnabled } from "@webstudio-is/feature-flags";
 import { prisma } from "@webstudio-is/prisma-client";
@@ -22,7 +22,7 @@ import { zfd } from "zod-form-data";
 import env from "~/env/env.server";
 import { createContext } from "~/shared/context.server";
 
-const StepSchema = z.enum(["theme", "sections", "ui"]);
+const StepSchema = z.enum(["theme", "sections", "ui", "scaffold", "customize"]);
 
 const RequestSchema = zfd.formData(
   z.object({
@@ -40,9 +40,9 @@ const RequestSchema = zfd.formData(
 
 const chains = {
   generate: {
-    theme: createThemeChain<GPTModelMessageFormat>,
-    sections: createSectionsChain<GPTModelMessageFormat>,
-    ui: createUiChain<GPTModelMessageFormat>,
+    scaffold: scaffold.createChain<GPTModelMessageFormat>,
+    theme: theme.createChain<GPTModelMessageFormat>,
+    customize: customize.createChain<GPTModelMessageFormat>,
   },
 };
 
@@ -82,13 +82,14 @@ export const action = async function action({
 
   if (parsed.success === false) {
     console.log("ERROR: req parse");
+
     return {
       success: false,
       type: "invalid_request",
       status: 400,
       message:
         process.env.NODE_ENV === "development"
-          ? JSON.stringify(parsed.error.errors, null, 2)
+          ? parsed.error.errors //JSON.stringify(parsed.error.errors, null, 2)
           : "",
     };
   }
@@ -155,7 +156,7 @@ export const action = async function action({
   for (const step of formData.steps) {
     let chain = null;
 
-    if (step === "theme" || step === "sections" || step === "ui") {
+    if (step in chains.generate) {
       chain = chains.generate[step]();
     } else {
       return {
@@ -169,6 +170,9 @@ export const action = async function action({
     let temperature = 0.5;
 
     switch (step) {
+      case "customize":
+        temperature = 0;
+        break;
       case "theme":
         temperature = 0.5;
         break;

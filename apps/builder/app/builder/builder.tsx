@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useUnmount } from "react-use";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { type Publish, usePublish } from "~/shared/pubsub";
-import type { Build } from "@webstudio-is/project-build";
+import type { Build, StyleSourceToken } from "@webstudio-is/project-build";
 import type { Project } from "@webstudio-is/project";
 import { theme, Box, type CSS, Flex, Grid } from "@webstudio-is/design-system";
 import type { AuthPermit } from "@webstudio-is/trpc-interface/index.server";
@@ -25,6 +25,7 @@ import { usePublishShortcuts } from "./shared/shortcuts";
 import {
   pagesStore,
   projectStore,
+  rootInstanceStore,
   useIsPreviewMode,
   useSetAssets,
   useSetAuthPermit,
@@ -46,6 +47,7 @@ import { BlockingAlerts } from "./features/blocking-alerts";
 import { useStore } from "@nanostores/react";
 import { useSyncPageUrl } from "~/shared/pages";
 import { AI } from "./features/ai";
+import { instanceToWsTemplate } from "@webstudio-is/react-sdk";
 
 registerContainers();
 
@@ -294,6 +296,42 @@ export const Builder = ({
     buildOrigin,
     project,
   });
+
+  const rootInstance = useStore(rootInstanceStore);
+  useEffect(() => {
+    if (rootInstance && process.env.NODE_ENV === "development") {
+      window.___exportToTemplate = () => {
+        const styleSourceTokens = build.styleSources
+          .filter(([id, styleSource]) => styleSource.type === "token")
+          .map(
+            ([_, styleSourceToken]) => styleSourceToken
+          ) as StyleSourceToken[];
+
+        const tokens = styleSourceTokens.map((styleSourceToken) => ({
+          id: styleSourceToken.id,
+          name: styleSourceToken.name,
+          styles: build.styles
+            .filter(
+              ([styleId, style]) => style.styleSourceId === styleSourceToken.id
+            )
+            .map(([_, style]) => ({
+              property: style.property,
+              value: style.value,
+            })),
+        }));
+
+        const template = instanceToWsTemplate({
+          build,
+          instanceId: rootInstance.id,
+        });
+
+        return {
+          template,
+          tokens,
+        };
+      };
+    }
+  }, [build, rootInstance]);
 
   return (
     <TooltipProvider>
