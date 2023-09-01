@@ -285,6 +285,7 @@ const createInstancesFromTemplate = (
           type: "local",
           id: styleSourceId,
         });
+        // always put local style source last
         styleSourceIds.push(styleSourceId);
         for (const styleDecl of item.styles) {
           styles.push({
